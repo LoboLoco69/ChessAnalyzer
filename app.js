@@ -13,7 +13,7 @@ function cleanPGN(pgn) {
     return pgn;
 }
 
-let engine = Stockfish();
+let engine = STOCKFISH();
 let latestEval = "No eval yet";
 
 engine.onmessage = function(event) {
