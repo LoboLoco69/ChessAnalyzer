@@ -1,35 +1,52 @@
-<h1>Chess Bot</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chess Bot</title>
 
-<button onclick="togglePGN()">Show / Hide PGN</button>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
-<div id="pgnSection">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
-    <textarea id="pgnInput"></textarea>
+    <link rel="stylesheet" href="style.css">
+</head>
 
-    <button onclick="loadPGN()">Load Game</button>
+<body>
+    <h1>Chess Bot</h1>
 
-</div>
+    <button onclick="togglePGN()">Show / Hide PGN</button>
 
-<div id="gameContainer">
+    <div id="pgnSection">
+        <br><br>
 
-    <div>
+        <textarea id="pgnInput" rows="10" cols="80" placeholder="Paste PGN here"></textarea>
 
-        <div id="board" style="width: 400px"></div>
+        <br><br>
 
-        <br>
-
-        <button onclick="prevMove()">Previous</button>
-        <button onclick="nextMove()">Next</button>
-
-        <p id="moveInfo">Move: 0</p>
-
+        <button onclick="loadPGN()">Load Game</button>
     </div>
 
-    <div id="output"></div>
+    <br><br>
 
-</div>
+    <div id="gameContainer">
+        <div>
+            <div id="board" style="width: 400px"></div>
 
-<script src="jquery"></script>
-<script src="chessboardjs"></script>
-<script src="chess.js"></script>
-<script src="app.js"></script>
+            <br>
+
+            <button onclick="prevMove()">Previous</button>
+            <button onclick="nextMove()">Next</button>
+
+            <p id="moveInfo">Move: 0</p>
+        </div>
+
+        <div id="output">
+            <h3>Move List</h3>
+            <p>Load a PGN to begin analysis.</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
