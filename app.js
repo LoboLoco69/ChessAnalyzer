@@ -39,21 +39,20 @@ engine.onmessage = function(event) {
             latestEval = "Mate in " + match[1];
             document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
 
-            if (line.startsWith("bestmove")) {
-    const parts = line.split(" ");
-    latestBestMove = parts[1];
-
-    document.getElementById("bestMove").innerText =
-        "Best Move: " + latestBestMove;
-
-    updateAnalysisPanel();
-}
-
             updateAnalysisPanel();
         }
     }
-};
 
+    if (line.includes("bestmove")) {
+        const parts = line.split(" ");
+        latestBestMove = parts[1];
+
+        document.getElementById("bestMove").innerText =
+            "Best Move: " + latestBestMove;
+
+        updateAnalysisPanel();
+    }
+};
 engine.postMessage("uci");
 
 function loadPGN() {
@@ -116,12 +115,12 @@ function prevMove() {
 
     for (let i = 0; i < currentMove; i++) {
         game.move(moves[i], { sloppy: true });
-        analyzeCurrentPosition();
     }
 
     board.position(game.fen());
     document.getElementById("moveInfo").innerText = "Move: " + currentMove;
     highlightCurrentMove();
+    analyzeCurrentPosition();
 }
 
 function highlightCurrentMove() {
@@ -202,7 +201,7 @@ function updateAnalysisPanel() {
         "Why: Stockfish is analyzing this position.";
 
     document.getElementById("bestMove").innerText =
-        "Best Move: Coming soon";
+    "Best Move: " + latestBestMove;
 }
 
 function getSimplePositionText(evalText) {
