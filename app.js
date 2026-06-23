@@ -83,6 +83,11 @@ function loadPGN() {
 
     moves = game.history();
     currentMove = 0;
+    previousEval = null;
+currentEval = null;
+lastEvalLoss = null;
+latestBestMove = "—";
+latestEval = "No eval yet";
 
     game.reset();
     board.position(game.fen());
