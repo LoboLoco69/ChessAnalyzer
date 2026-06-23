@@ -1,1 +1,35 @@
+<h1>Chess Bot</h1>
 
+<button onclick="togglePGN()">Show / Hide PGN</button>
+
+<div id="pgnSection">
+
+    <textarea id="pgnInput"></textarea>
+
+    <button onclick="loadPGN()">Load Game</button>
+
+</div>
+
+<div id="gameContainer">
+
+    <div>
+
+        <div id="board" style="width: 400px"></div>
+
+        <br>
+
+        <button onclick="prevMove()">Previous</button>
+        <button onclick="nextMove()">Next</button>
+
+        <p id="moveInfo">Move: 0</p>
+
+    </div>
+
+    <div id="output"></div>
+
+</div>
+
+<script src="jquery"></script>
+<script src="chessboardjs"></script>
+<script src="chess.js"></script>
+<script src="app.js"></script>
