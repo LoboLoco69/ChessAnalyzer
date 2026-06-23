@@ -89,6 +89,7 @@ function nextMove() {
     board.position(game.fen());
     document.getElementById("moveInfo").innerText = "Move: " + currentMove;
     highlightCurrentMove();
+    analyzeCurrentPosition();
 }
 
 function prevMove() {
@@ -100,6 +101,7 @@ function prevMove() {
 
     for (let i = 0; i < currentMove; i++) {
         game.move(moves[i], { sloppy: true });
+        analyzeCurrentPosition();
     }
 
     board.position(game.fen());
@@ -151,4 +153,9 @@ function togglePGN() {
     } else {
         section.style.display = "none";
     }
+}
+
+function analyzeCurrentPosition() {
+    engine.postMessage("position fen " + game.fen());
+    engine.postMessage("go depth 12");
 }
