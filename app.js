@@ -185,7 +185,6 @@ function analyzeCurrentPosition() {
     document.getElementById("bestMove").innerText =
         "Best Move: Thinking...";
 
-    engine.postMessage("stop");
     engine.postMessage("position fen " + game.fen());
     engine.postMessage("go depth 12");
 }
