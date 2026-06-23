@@ -6,6 +6,7 @@ let board = Chessboard("board", {
 let game = new Chess();
 let moves = [];
 let currentMove = 0;
+let latestBestMove = "—";
 
 function cleanPGN(pgn) {
     pgn = pgn.replace(/\{[^}]*\}/g, "");
@@ -37,6 +38,16 @@ engine.onmessage = function(event) {
         if (match) {
             latestEval = "Mate in " + match[1];
             document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
+
+            if (line.startsWith("bestmove")) {
+    const parts = line.split(" ");
+    latestBestMove = parts[1];
+
+    document.getElementById("bestMove").innerText =
+        "Best Move: " + latestBestMove;
+
+    updateAnalysisPanel();
+}
 
             updateAnalysisPanel();
         }
@@ -160,6 +171,12 @@ function togglePGN() {
 }
 
 function analyzeCurrentPosition() {
+    latestBestMove = "Thinking...";
+
+    document.getElementById("bestMove").innerText =
+        "Best Move: Thinking...";
+
+    engine.postMessage("stop");
     engine.postMessage("position fen " + game.fen());
     engine.postMessage("go depth 12");
 }
