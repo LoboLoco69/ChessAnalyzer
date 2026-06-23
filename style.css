@@ -118,3 +118,30 @@ textarea {
 .black-3c85d {
     background: #6b4423 !important;
 }
+
+#analysisPanel {
+    background: linear-gradient(
+        180deg,
+        #1f2937,
+        #111827
+    );
+    border: 2px solid #c9a227;
+    border-radius: 14px;
+    padding: 16px;
+    min-width: 300px;
+    height: 430px;
+    overflow-y: auto;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.05),
+        0 10px 25px rgba(0,0,0,.35);
+}
+
+#analysisPanel h3 {
+    margin-top: 0;
+}
+
+#analysisPanel hr {
+    border: none;
+    border-top: 1px solid rgba(212,175,55,.35);
+    margin: 14px 0;
+}
