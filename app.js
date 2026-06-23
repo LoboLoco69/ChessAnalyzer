@@ -22,7 +22,7 @@ function loadPGN() {
     pgn = cleanPGN(pgn);
 
     game = new Chess();
-    const loaded = game.load_pgn(pgn);
+    const loaded = game.load_pgn(pgn, { sloppy: true });
 
     if (!loaded) {
         document.getElementById("output").innerHTML = "<h3>PGN could not be loaded.</h3>";
@@ -55,7 +55,7 @@ function showMoveList() {
 function nextMove() {
     if (currentMove >= moves.length) return;
 
-    game.move(moves[currentMove]);
+    game.move(moves[currentMove], { sloppy: true });
     currentMove++;
 
     board.position(game.fen());
@@ -71,7 +71,7 @@ function prevMove() {
     game.reset();
 
     for (let i = 0; i < currentMove; i++) {
-        game.move(moves[i]);
+        game.move(moves[i], { sloppy: true });
     }
 
     board.position(game.fen());
