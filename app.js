@@ -1,25 +1,126 @@
 let board = Chessboard("board", {
     position: "start",
-    pieceTheme:
-      "https://chessboardjs.com/img/chesspieces/alpha/{piece}.png"
+    pieceTheme: "https://chessboardjs.com/img/chesspieces/alpha/{piece}.png"
 });
 
 let game = new Chess();
 let moves = [];
 let currentMove = 0;
 
-loadPGN()
+function cleanPGN(pgn) {
+    pgn = pgn.replace(/\{[^}]*\}/g, "");
+    pgn = pgn.replace(/\([^)]*\)/g, "");
+    return pgn;
+}
 
-showMoveList()
+function loadPGN() {
+    let pgn = document.getElementById("pgnInput").value;
 
-nextMove()
+    const playerColor = getPlayerColor(pgn, "lobothebozo");
+    board.orientation(playerColor);
 
-prevMove()
+    pgn = cleanPGN(pgn);
 
-highlightCurrentMove()
+    game = new Chess();
+    const loaded = game.load_pgn(pgn);
 
-getPlayerColor()
+    if (!loaded) {
+        document.getElementById("output").innerHTML = "<h3>PGN could not be loaded.</h3>";
+        return;
+    }
 
-togglePGN()
+    moves = game.history();
+    currentMove = 0;
 
-cleanPGN()
+    game.reset();
+    board.position(game.fen());
+
+    document.getElementById("moveInfo").innerText = "Move: 0";
+    showMoveList();
+
+    document.getElementById("pgnSection").style.display = "none";
+}
+
+function showMoveList() {
+    let html = "<h3>Move List</h3><ol>";
+
+    moves.forEach((move, index) => {
+        html += `<li id="move-${index}">${move}</li>`;
+    });
+
+    html += "</ol>";
+    document.getElementById("output").innerHTML = html;
+}
+
+function nextMove() {
+    if (currentMove >= moves.length) return;
+
+    game.move(moves[currentMove]);
+    currentMove++;
+
+    board.position(game.fen());
+    document.getElementById("moveInfo").innerText = "Move: " + currentMove;
+    highlightCurrentMove();
+}
+
+function prevMove() {
+    if (currentMove <= 0) return;
+
+    currentMove--;
+
+    game.reset();
+
+    for (let i = 0; i < currentMove; i++) {
+        game.move(moves[i]);
+    }
+
+    board.position(game.fen());
+    document.getElementById("moveInfo").innerText = "Move: " + currentMove;
+    highlightCurrentMove();
+}
+
+function highlightCurrentMove() {
+    moves.forEach((move, index) => {
+        const item = document.getElementById("move-" + index);
+
+        if (item) {
+            item.style.fontWeight = "normal";
+            item.style.backgroundColor = "";
+            item.style.color = "";
+        }
+    });
+
+    if (currentMove > 0) {
+        const current = document.getElementById("move-" + (currentMove - 1));
+
+        if (current) {
+            current.style.fontWeight = "bold";
+            current.style.backgroundColor = "#d4af37";
+            current.style.color = "#111827";
+        }
+    }
+}
+
+function getPlayerColor(pgn, username) {
+    const whiteMatch = pgn.match(/\[White "([^"]+)"\]/);
+    const blackMatch = pgn.match(/\[Black "([^"]+)"\]/);
+
+    const whiteName = whiteMatch ? whiteMatch[1].toLowerCase() : "";
+    const blackName = blackMatch ? blackMatch[1].toLowerCase() : "";
+    const user = username.toLowerCase();
+
+    if (whiteName === user) return "white";
+    if (blackName === user) return "black";
+
+    return "white";
+}
+
+function togglePGN() {
+    const section = document.getElementById("pgnSection");
+
+    if (section.style.display === "none") {
+        section.style.display = "block";
+    } else {
+        section.style.display = "none";
+    }
+}
