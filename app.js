@@ -13,6 +13,34 @@ function cleanPGN(pgn) {
     return pgn;
 }
 
+let engine = Stockfish();
+let latestEval = "No eval yet";
+
+engine.onmessage = function(event) {
+    const line = event.data ? event.data : event;
+
+    if (line.includes("score cp")) {
+        const match = line.match(/score cp (-?\d+)/);
+
+        if (match) {
+            const centipawns = parseInt(match[1]);
+            latestEval = (centipawns / 100).toFixed(2);
+            document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
+        }
+    }
+
+    if (line.includes("score mate")) {
+        const match = line.match(/score mate (-?\d+)/);
+
+        if (match) {
+            latestEval = "Mate in " + match[1];
+            document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
+        }
+    }
+};
+
+engine.postMessage("uci");
+
 function loadPGN() {
     let pgn = document.getElementById("pgnInput").value;
 
