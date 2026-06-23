@@ -7,6 +7,9 @@ let game = new Chess();
 let moves = [];
 let currentMove = 0;
 let latestBestMove = "—";
+let previousEval = null;
+let currentEval = null;
+let lastEvalLoss = null;
 
 function cleanPGN(pgn) {
     pgn = pgn.replace(/\{[^}]*\}/g, "");
@@ -25,7 +28,14 @@ engine.onmessage = function(event) {
 
         if (match) {
             const centipawns = parseInt(match[1]);
-            latestEval = (centipawns / 100).toFixed(2);
+            previousEval = currentEval;
+currentEval = parseFloat((centipawns / 100).toFixed(2));
+
+latestEval = currentEval.toFixed(2);
+
+if (previousEval !== null) {
+    lastEvalLoss = Math.abs(currentEval - previousEval);
+}
             document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
 
             updateAnalysisPanel();
@@ -198,7 +208,10 @@ function updateAnalysisPanel() {
         "Move Grade: Reviewing " + move;
 
     document.getElementById("moveReason").innerText =
-        "Why: Stockfish is analyzing this position.";
+        if (lastEvalLoss !== null) {
+    document.getElementById("moveReason").innerText =
+        "Eval Change: " + lastEvalLoss.toFixed(2);
+}
 
     document.getElementById("bestMove").innerText =
     "Best Move: " + latestBestMove;
