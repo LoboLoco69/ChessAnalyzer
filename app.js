@@ -26,6 +26,8 @@ engine.onmessage = function(event) {
             const centipawns = parseInt(match[1]);
             latestEval = (centipawns / 100).toFixed(2);
             document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
+
+            updateAnalysisPanel();
         }
     }
 
@@ -35,6 +37,8 @@ engine.onmessage = function(event) {
         if (match) {
             latestEval = "Mate in " + match[1];
             document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
+
+            updateAnalysisPanel();
         }
     }
 };
@@ -158,4 +162,50 @@ function togglePGN() {
 function analyzeCurrentPosition() {
     engine.postMessage("position fen " + game.fen());
     engine.postMessage("go depth 12");
+}
+
+function updateAnalysisPanel() {
+    document.getElementById("positionAssessment").innerText =
+        "Position: " + getSimplePositionText(latestEval);
+
+    if (currentMove === 0) {
+        document.getElementById("moveGrade").innerText = "Move Grade: —";
+        document.getElementById("moveReason").innerText =
+            "Why: Start stepping through the game.";
+        document.getElementById("bestMove").innerText = "Best Move: —";
+        return;
+    }
+
+    const move = moves[currentMove - 1];
+
+    document.getElementById("moveGrade").innerText =
+        "Move Grade: Reviewing " + move;
+
+    document.getElementById("moveReason").innerText =
+        "Why: Stockfish is analyzing this position.";
+
+    document.getElementById("bestMove").innerText =
+        "Best Move: Coming soon";
+}
+
+function getSimplePositionText(evalText) {
+    if (!evalText || evalText === "No eval yet") {
+        return "Not analyzed yet";
+    }
+
+    if (evalText.includes("Mate")) {
+        return evalText;
+    }
+
+    const score = parseFloat(evalText);
+
+    if (Math.abs(score) < 0.5) return "Equal";
+    if (score >= 0.5 && score < 1.5) return "Slightly better for White";
+    if (score <= -0.5 && score > -1.5) return "Slightly better for Black";
+    if (score >= 1.5 && score < 3) return "White is better";
+    if (score <= -1.5 && score > -3) return "Black is better";
+    if (score >= 3) return "White is winning";
+    if (score <= -3) return "Black is winning";
+
+    return "Unclear";
 }
