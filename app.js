@@ -1,4 +1,8 @@
-let board = Chessboard(...);
+let board = Chessboard("board", {
+    position: "start",
+    pieceTheme:
+      "https://chessboardjs.com/img/chesspieces/alpha/{piece}.png"
+});
 
 let game = new Chess();
 let moves = [];
