@@ -307,6 +307,8 @@ function updateAnalysisPanel() {
         document.getElementById("bestMove").innerText =
             "Best Move: —";
 
+        clearBestMoveHighlights();
+
         return;
     }
 
@@ -324,6 +326,8 @@ function updateAnalysisPanel() {
 
         document.getElementById("bestMove").innerText =
             "Best Move: " + savedReview.bestMove;
+        
+        highlightBestMove(savedReview.bestMove);
 
         return;
     }
@@ -341,6 +345,7 @@ function updateAnalysisPanel() {
 
     document.getElementById("bestMove").innerText =
         "Best Move: Thinking...";
+    clearBestMoveHighlights();
 }
 
 function getSimplePositionText(evalText) {
@@ -393,3 +398,27 @@ function getMoveExplanation(evalLoss) {
 
     return "This move misses the strongest continuation and gives your opponent a major advantage.";
 }
+
+function clearBestMoveHighlights() {
+    $("#board .square-55d63").css("box-shadow", "");
+}
+
+function highlightBestMove(bestMove) {
+    clearBestMoveHighlights();
+
+    if (!bestMove || bestMove.length < 4) return;
+
+    const from = bestMove.substring(0, 2);
+    const to = bestMove.substring(2, 4);
+
+    $("#board .square-" + from).css(
+        "box-shadow",
+        "inset 0 0 0 4px #22c55e"
+    );
+
+    $("#board .square-" + to).css(
+        "box-shadow",
+        "inset 0 0 0 4px #d4af37"
+    );
+}
+
