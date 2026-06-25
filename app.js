@@ -58,6 +58,15 @@ if (previousEval !== null) {
     if (line.includes("bestmove")) {
         const parts = line.split(" ");
         latestBestMove = parts[1];
+        if (analysisMoveNumber !== null && currentMove === analysisMoveNumber) {
+    moveReviews[analysisMoveNumber] = {
+        move: moves[analysisMoveNumber - 1],
+        eval: latestEval,
+        evalLoss: lastEvalLoss,
+        bestMove: latestBestMove,
+        grade: getMoveGrade(lastEvalLoss)
+    };
+}
 
         document.getElementById("bestMove").innerText =
             "Best Move: " + latestBestMove;
@@ -85,6 +94,8 @@ function loadPGN() {
 
     moves = game.history();
     currentMove = 0;
+    moveReviews = {};
+analysisMoveNumber = null;
     previousEval = null;
 currentEval = null;
 lastEvalLoss = null;
@@ -187,6 +198,7 @@ function togglePGN() {
 }
 
 function analyzeCurrentPosition() {
+    analysisMoveNumber = currentMove;
     latestBestMove = "Thinking...";
 
     document.getElementById("bestMove").innerText =
@@ -208,10 +220,25 @@ function updateAnalysisPanel() {
         return;
     }
 
+    const savedReview = moveReviews[currentMove];
+
+    if (savedReview) {
+        document.getElementById("moveGrade").innerText =
+            savedReview.grade + " (" + savedReview.move + ")";
+
+        document.getElementById("moveReason").innerText =
+            "Eval Change: " + savedReview.evalLoss.toFixed(2);
+
+        document.getElementById("bestMove").innerText =
+            "Best Move: " + savedReview.bestMove;
+
+        return;
+    }
+
     const move = moves[currentMove - 1];
 
     document.getElementById("moveGrade").innerText =
-    getMoveGrade(lastEvalLoss) + " (" + move + ")";
+        getMoveGrade(lastEvalLoss) + " (" + move + ")";
 
     if (lastEvalLoss !== null) {
         document.getElementById("moveReason").innerText =
