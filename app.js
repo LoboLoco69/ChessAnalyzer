@@ -206,18 +206,15 @@ function getFenAfterMove(moveNumber) {
 
 function analyzeFen(fen) {
     return new Promise((resolve) => {
-        jobId++;
-
         currentEngineJob = {
-            id: jobId,
             lastEval: 0,
             resolve: resolve
         };
 
-        engine.postMessage("stop");
         engine.postMessage("position fen " + fen);
         engine.postMessage("go depth 12");
     });
+}
 }
 
 async function analyzeMove(moveNumber) {
@@ -243,17 +240,19 @@ async function analyzeMove(moveNumber) {
     const afterFen = getFenAfterMove(moveNumber);
 
     const bestLine = await analyzeFen(beforeFen);
+
+    if (currentMove !== moveNumber) return;
+
     const actualLine = await analyzeFen(afterFen);
-    
-    if (currentMove !== moveNumber) {
-    return;
-}
 
-    const bestEval = normalizeEvalForSide(bestLine.eval, moveNumber);
-const actualEval = normalizeEvalForSide(actualLine.eval, moveNumber);
+    if (currentMove !== moveNumber) return;
 
-let evalLoss = bestEval - actualEval;
-if (evalLoss < 0) evalLoss = 0;
+    const isWhiteMove = moveNumber % 2 === 1;
+
+    const bestEvalForPlayer = isWhiteMove ? bestLine.eval : -bestLine.eval;
+    const actualEvalForPlayer = isWhiteMove ? actualLine.eval : -actualLine.eval;
+
+    let evalLoss = bestEvalForPlayer - actualEvalForPlayer;
     if (evalLoss < 0) evalLoss = 0;
 
     latestEval = actualLine.eval.toFixed(2);
@@ -329,9 +328,9 @@ function getMoveGrade(evalLoss) {
     if (evalLoss === null || evalLoss === undefined)
         return "Move Grade: Reviewing...";
 
-    if (evalLoss < 0.30) return "Move Grade: ✓ Good";
-    if (evalLoss < 0.80) return "Move Grade: ⚠ Inaccuracy";
-    if (evalLoss < 1.80) return "Move Grade: ❌ Mistake";
+    if (evalLoss < 0.50) return "Move Grade: ✓ Good";
+    if (evalLoss < 1.20) return "Move Grade: ⚠ Inaccuracy";
+    if (evalLoss < 2.50) return "Move Grade: ❌ Mistake";
 
     return "Move Grade: 🚨 Blunder";
 }
