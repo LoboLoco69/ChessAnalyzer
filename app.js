@@ -10,6 +10,8 @@ let latestBestMove = "—";
 let previousEval = null;
 let currentEval = null;
 let lastEvalLoss = null;
+let moveReviews = {};
+let analysisMoveNumber = null;
 
 function cleanPGN(pgn) {
     pgn = pgn.replace(/\{[^}]*\}/g, "");
