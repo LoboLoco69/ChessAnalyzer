@@ -244,6 +244,10 @@ async function analyzeMove(moveNumber) {
 
     const bestLine = await analyzeFen(beforeFen);
     const actualLine = await analyzeFen(afterFen);
+    
+    if (currentMove !== moveNumber) {
+    return;
+}
 
     const bestEvalForMover = bestLine.eval;
     const actualEvalForMover = -actualLine.eval;
