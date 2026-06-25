@@ -237,33 +237,52 @@ async function analyzeMove(moveNumber) {
         "Best Move: Thinking...";
 
     const beforeFen = getFenBeforeMove(moveNumber);
-    const afterFen = getFenAfterMove(moveNumber);
+    const afterYourMoveFen = getFenAfterMove(moveNumber);
 
-    const bestLine = await analyzeFen(beforeFen);
+    // 1. Ask Stockfish what the best move is from BEFORE your move
+    const bestMoveSearch = await analyzeFen(beforeFen);
 
     if (currentMove !== moveNumber) return;
 
-    const actualLine = await analyzeFen(afterFen);
+    // 2. Play Stockfish's best move on a temporary board
+    const bestMoveGame = new Chess(beforeFen);
+    bestMoveGame.move(bestMoveSearch.bestMove, { sloppy: true });
+
+    const afterBestMoveFen = bestMoveGame.fen();
+
+    // 3. Evaluate position after Stockfish's best move
+    const bestMoveResult = await analyzeFen(afterBestMoveFen);
+
+    if (currentMove !== moveNumber) return;
+
+    // 4. Evaluate position after your actual move
+    const actualMoveResult = await analyzeFen(afterYourMoveFen);
 
     if (currentMove !== moveNumber) return;
 
     const isWhiteMove = moveNumber % 2 === 1;
 
-    const bestEvalForPlayer = isWhiteMove ? bestLine.eval : -bestLine.eval;
-    const actualEvalForPlayer = isWhiteMove ? actualLine.eval : -actualLine.eval;
+    const bestEvalForPlayer = isWhiteMove
+        ? bestMoveResult.eval
+        : -bestMoveResult.eval;
+
+    const actualEvalForPlayer = isWhiteMove
+        ? actualMoveResult.eval
+        : -actualMoveResult.eval;
 
     let evalLoss = bestEvalForPlayer - actualEvalForPlayer;
+
     if (evalLoss < 0) evalLoss = 0;
 
-    latestEval = actualLine.eval.toFixed(2);
-    latestBestMove = bestLine.bestMove;
+    latestEval = actualMoveResult.eval.toFixed(2);
+    latestBestMove = bestMoveSearch.bestMove;
 
     const review = {
         move: movePlayed,
-        bestMove: bestLine.bestMove,
+        bestMove: bestMoveSearch.bestMove,
         evalLoss: evalLoss,
         grade: getMoveGrade(evalLoss),
-        positionText: getSimplePositionText(actualLine.eval.toFixed(2))
+        positionText: getSimplePositionText(actualMoveResult.eval.toFixed(2))
     };
 
     moveReviews[moveNumber] = review;
