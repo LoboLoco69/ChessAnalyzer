@@ -249,10 +249,11 @@ async function analyzeMove(moveNumber) {
     return;
 }
 
-    const bestEvalForMover = bestLine.eval;
-    const actualEvalForMover = -actualLine.eval;
+    const bestEval = normalizeEvalForSide(bestLine.eval, moveNumber);
+const actualEval = normalizeEvalForSide(actualLine.eval, moveNumber);
 
-    let evalLoss = bestEvalForMover - actualEvalForMover;
+let evalLoss = bestEval - actualEval;
+if (evalLoss < 0) evalLoss = 0;
     if (evalLoss < 0) evalLoss = 0;
 
     latestEval = actualLine.eval.toFixed(2);
@@ -351,4 +352,10 @@ function getSimplePositionText(evalText) {
     if (score <= -3) return "Black is winning";
 
     return "Unclear";
+}
+
+function normalizeEvalForSide(evalScore, moveNumber) {
+    const isWhiteMove = moveNumber % 2 === 1;
+
+    return isWhiteMove ? evalScore : -evalScore;
 }
