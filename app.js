@@ -209,7 +209,7 @@ function updateAnalysisPanel() {
     const move = moves[currentMove - 1];
 
     document.getElementById("moveGrade").innerText =
-        "Move Grade: Reviewing " + move;
+    getMoveGrade(lastEvalLoss) + " (" + move + ")";
 
     if (lastEvalLoss !== null) {
         document.getElementById("moveReason").innerText =
@@ -243,4 +243,14 @@ function getSimplePositionText(evalText) {
     if (score <= -3) return "Black is winning";
 
     return "Unclear";
+}
+
+function getMoveGrade(evalLoss) {
+    if (evalLoss === null) return "Move Grade: Reviewing...";
+
+    if (evalLoss < 0.30) return "Move Grade: ✓ Good";
+    if (evalLoss < 0.80) return "Move Grade: ⚠ Inaccuracy";
+    if (evalLoss < 1.80) return "Move Grade: ❌ Mistake";
+
+    return "Move Grade: 🚨 Blunder";
 }
