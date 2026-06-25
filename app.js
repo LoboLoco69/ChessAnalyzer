@@ -6,75 +6,56 @@ let board = Chessboard("board", {
 let game = new Chess();
 let moves = [];
 let currentMove = 0;
-let latestBestMove = "—";
-let previousEval = null;
-let currentEval = null;
-let lastEvalLoss = null;
+
 let moveReviews = {};
-let analysisMoveNumber = null;
+let latestEval = "No eval yet";
+let latestBestMove = "—";
+
+let engine = STOCKFISH();
+let currentEngineJob = null;
+let jobId = 0;
+
+engine.onmessage = function(event) {
+    const line = event.data ? event.data : event;
+
+    if (!currentEngineJob) return;
+
+    if (line.includes("score cp")) {
+        const match = line.match(/score cp (-?\d+)/);
+        if (match) {
+            currentEngineJob.lastEval = parseInt(match[1]) / 100;
+        }
+    }
+
+    if (line.includes("score mate")) {
+        const match = line.match(/score mate (-?\d+)/);
+        if (match) {
+            const mate = parseInt(match[1]);
+            currentEngineJob.lastEval = mate > 0 ? 100 : -100;
+        }
+    }
+
+    if (line.includes("bestmove")) {
+        const parts = line.split(" ");
+        const bestMove = parts[1];
+
+        const result = {
+            eval: currentEngineJob.lastEval,
+            bestMove: bestMove
+        };
+
+        currentEngineJob.resolve(result);
+        currentEngineJob = null;
+    }
+};
+
+engine.postMessage("uci");
 
 function cleanPGN(pgn) {
     pgn = pgn.replace(/\{[^}]*\}/g, "");
     pgn = pgn.replace(/\([^)]*\)/g, "");
     return pgn;
 }
-
-let engine = STOCKFISH();
-let latestEval = "No eval yet";
-
-engine.onmessage = function(event) {
-    const line = event.data ? event.data : event;
-
-    if (line.includes("score cp")) {
-        const match = line.match(/score cp (-?\d+)/);
-
-        if (match) {
-            const centipawns = parseInt(match[1]);
-            previousEval = currentEval;
-currentEval = parseFloat((centipawns / 100).toFixed(2));
-
-latestEval = currentEval.toFixed(2);
-
-if (previousEval !== null) {
-    lastEvalLoss = Math.abs(currentEval - previousEval);
-}
-            document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
-
-            updateAnalysisPanel();
-        }
-    }
-
-    if (line.includes("score mate")) {
-        const match = line.match(/score mate (-?\d+)/);
-
-        if (match) {
-            latestEval = "Mate in " + match[1];
-            document.getElementById("evalOutput").innerText = "Eval: " + latestEval;
-
-            updateAnalysisPanel();
-        }
-    }
-
-    if (line.includes("bestmove")) {
-        const parts = line.split(" ");
-        latestBestMove = parts[1];
-        if (analysisMoveNumber !== null && currentMove === analysisMoveNumber) {
-    moveReviews[analysisMoveNumber] = {
-        move: moves[analysisMoveNumber - 1],
-        eval: latestEval,
-        evalLoss: lastEvalLoss,
-        bestMove: latestBestMove,
-        grade: getMoveGrade(lastEvalLoss)
-    };
-}
-
-        document.getElementById("bestMove").innerText =
-            "Best Move: " + latestBestMove;
-
-        updateAnalysisPanel();
-    }
-};
-engine.postMessage("uci");
 
 function loadPGN() {
     let pgn = document.getElementById("pgnInput").value;
@@ -95,18 +76,17 @@ function loadPGN() {
     moves = game.history();
     currentMove = 0;
     moveReviews = {};
-analysisMoveNumber = null;
-    previousEval = null;
-currentEval = null;
-lastEvalLoss = null;
-latestBestMove = "—";
-latestEval = "No eval yet";
+    latestEval = "No eval yet";
+    latestBestMove = "—";
 
     game.reset();
     board.position(game.fen());
 
     document.getElementById("moveInfo").innerText = "Move: 0";
+    document.getElementById("evalOutput").innerText = "Eval: not analyzed yet";
+
     showMoveList();
+    updateAnalysisPanel();
 
     document.getElementById("pgnSection").style.display = "none";
 }
@@ -130,8 +110,10 @@ function nextMove() {
 
     board.position(game.fen());
     document.getElementById("moveInfo").innerText = "Move: " + currentMove;
+
     highlightCurrentMove();
-    analyzeCurrentPosition();
+    updateAnalysisPanel();
+    analyzeMove(currentMove);
 }
 
 function prevMove() {
@@ -147,8 +129,13 @@ function prevMove() {
 
     board.position(game.fen());
     document.getElementById("moveInfo").innerText = "Move: " + currentMove;
+
     highlightCurrentMove();
-    analyzeCurrentPosition();
+    updateAnalysisPanel();
+
+    if (currentMove > 0) {
+        analyzeMove(currentMove);
+    }
 }
 
 function highlightCurrentMove() {
@@ -197,37 +184,120 @@ function togglePGN() {
     }
 }
 
-function analyzeCurrentPosition() {
-    analysisMoveNumber = currentMove;
-    latestBestMove = "Thinking...";
+function getFenBeforeMove(moveNumber) {
+    const tempGame = new Chess();
+
+    for (let i = 0; i < moveNumber - 1; i++) {
+        tempGame.move(moves[i], { sloppy: true });
+    }
+
+    return tempGame.fen();
+}
+
+function getFenAfterMove(moveNumber) {
+    const tempGame = new Chess();
+
+    for (let i = 0; i < moveNumber; i++) {
+        tempGame.move(moves[i], { sloppy: true });
+    }
+
+    return tempGame.fen();
+}
+
+function analyzeFen(fen) {
+    return new Promise((resolve) => {
+        jobId++;
+
+        currentEngineJob = {
+            id: jobId,
+            lastEval: 0,
+            resolve: resolve
+        };
+
+        engine.postMessage("stop");
+        engine.postMessage("position fen " + fen);
+        engine.postMessage("go depth 12");
+    });
+}
+
+async function analyzeMove(moveNumber) {
+    if (moveNumber === 0) return;
+
+    if (moveReviews[moveNumber]) {
+        updateAnalysisPanel();
+        return;
+    }
+
+    const movePlayed = moves[moveNumber - 1];
+
+    document.getElementById("moveGrade").innerText =
+        "Move Grade: Reviewing " + movePlayed;
+
+    document.getElementById("moveReason").innerText =
+        "Why: Comparing your move to Stockfish's best move...";
 
     document.getElementById("bestMove").innerText =
         "Best Move: Thinking...";
 
-    engine.postMessage("position fen " + game.fen());
-    engine.postMessage("go depth 12");
+    const beforeFen = getFenBeforeMove(moveNumber);
+    const afterFen = getFenAfterMove(moveNumber);
+
+    const bestLine = await analyzeFen(beforeFen);
+    const actualLine = await analyzeFen(afterFen);
+
+    const bestEvalForMover = bestLine.eval;
+    const actualEvalForMover = -actualLine.eval;
+
+    let evalLoss = bestEvalForMover - actualEvalForMover;
+    if (evalLoss < 0) evalLoss = 0;
+
+    latestEval = actualLine.eval.toFixed(2);
+    latestBestMove = bestLine.bestMove;
+
+    const review = {
+        move: movePlayed,
+        bestMove: bestLine.bestMove,
+        evalLoss: evalLoss,
+        grade: getMoveGrade(evalLoss),
+        positionText: getSimplePositionText(actualLine.eval.toFixed(2))
+    };
+
+    moveReviews[moveNumber] = review;
+
+    document.getElementById("evalOutput").innerText =
+        "Eval: " + latestEval;
+
+    updateAnalysisPanel();
 }
 
 function updateAnalysisPanel() {
-    document.getElementById("positionAssessment").innerText =
-        "Position: " + getSimplePositionText(latestEval);
-
     if (currentMove === 0) {
-        document.getElementById("moveGrade").innerText = "Move Grade: —";
+        document.getElementById("positionAssessment").innerText =
+            "Position: Not analyzed yet";
+
+        document.getElementById("moveGrade").innerText =
+            "Move Grade: —";
+
         document.getElementById("moveReason").innerText =
             "Why: Start stepping through the game.";
-        document.getElementById("bestMove").innerText = "Best Move: —";
+
+        document.getElementById("bestMove").innerText =
+            "Best Move: —";
+
         return;
     }
 
     const savedReview = moveReviews[currentMove];
 
     if (savedReview) {
+        document.getElementById("positionAssessment").innerText =
+            "Position: " + savedReview.positionText;
+
         document.getElementById("moveGrade").innerText =
             savedReview.grade + " (" + savedReview.move + ")";
 
         document.getElementById("moveReason").innerText =
-            "Eval Change: " + savedReview.evalLoss.toFixed(2);
+            "Why: Your move was compared against Stockfish's best move.";
 
         document.getElementById("bestMove").innerText =
             "Best Move: " + savedReview.bestMove;
@@ -237,28 +307,33 @@ function updateAnalysisPanel() {
 
     const move = moves[currentMove - 1];
 
-    document.getElementById("moveGrade").innerText =
-        getMoveGrade(lastEvalLoss) + " (" + move + ")";
+    document.getElementById("positionAssessment").innerText =
+        "Position: analyzing...";
 
-    if (lastEvalLoss !== null) {
-        document.getElementById("moveReason").innerText =
-            "Eval Change: " + lastEvalLoss.toFixed(2);
-    } else {
-        document.getElementById("moveReason").innerText =
-            "Eval Change: waiting for Stockfish...";
-    }
+    document.getElementById("moveGrade").innerText =
+        "Move Grade: Reviewing " + move;
+
+    document.getElementById("moveReason").innerText =
+        "Why: Waiting for Stockfish...";
 
     document.getElementById("bestMove").innerText =
-        "Best Move: " + latestBestMove;
+        "Best Move: Thinking...";
+}
+
+function getMoveGrade(evalLoss) {
+    if (evalLoss === null || evalLoss === undefined)
+        return "Move Grade: Reviewing...";
+
+    if (evalLoss < 0.30) return "Move Grade: ✓ Good";
+    if (evalLoss < 0.80) return "Move Grade: ⚠ Inaccuracy";
+    if (evalLoss < 1.80) return "Move Grade: ❌ Mistake";
+
+    return "Move Grade: 🚨 Blunder";
 }
 
 function getSimplePositionText(evalText) {
     if (!evalText || evalText === "No eval yet") {
         return "Not analyzed yet";
-    }
-
-    if (evalText.includes("Mate")) {
-        return evalText;
     }
 
     const score = parseFloat(evalText);
@@ -272,14 +347,4 @@ function getSimplePositionText(evalText) {
     if (score <= -3) return "Black is winning";
 
     return "Unclear";
-}
-
-function getMoveGrade(evalLoss) {
-    if (evalLoss === null) return "Move Grade: Reviewing...";
-
-    if (evalLoss < 0.30) return "Move Grade: ✓ Good";
-    if (evalLoss < 0.80) return "Move Grade: ⚠ Inaccuracy";
-    if (evalLoss < 1.80) return "Move Grade: ❌ Mistake";
-
-    return "Move Grade: 🚨 Blunder";
 }
