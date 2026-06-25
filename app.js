@@ -359,3 +359,14 @@ function normalizeEvalForSide(evalScore, moveNumber) {
 
     return isWhiteMove ? evalScore : -evalScore;
 }
+
+function getMoveGrade(evalLoss) {
+    if (evalLoss === null || evalLoss === undefined)
+        return "Move Grade: Reviewing...";
+
+    if (evalLoss < 0.75) return "Move Grade: ✓ Good";
+    if (evalLoss < 1.50) return "Move Grade: ⚠ Inaccuracy";
+    if (evalLoss < 3.00) return "Move Grade: ❌ Mistake";
+
+    return "Move Grade: 🚨 Blunder";
+}
