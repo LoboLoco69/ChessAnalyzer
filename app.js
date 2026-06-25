@@ -324,17 +324,6 @@ function updateAnalysisPanel() {
         "Best Move: Thinking...";
 }
 
-function getMoveGrade(evalLoss) {
-    if (evalLoss === null || evalLoss === undefined)
-        return "Move Grade: Reviewing...";
-
-    if (evalLoss < 0.50) return "Move Grade: ✓ Good";
-    if (evalLoss < 1.20) return "Move Grade: ⚠ Inaccuracy";
-    if (evalLoss < 2.50) return "Move Grade: ❌ Mistake";
-
-    return "Move Grade: 🚨 Blunder";
-}
-
 function getSimplePositionText(evalText) {
     if (!evalText || evalText === "No eval yet") {
         return "Not analyzed yet";
