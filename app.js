@@ -215,7 +215,7 @@ function analyzeFen(fen) {
         engine.postMessage("go depth 12");
     });
 }
-}
+
 
 async function analyzeMove(moveNumber) {
     if (moveNumber === 0) return;
