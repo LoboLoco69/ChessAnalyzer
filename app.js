@@ -320,7 +320,7 @@ function updateAnalysisPanel() {
             savedReview.grade + " (" + savedReview.move + ")";
 
         document.getElementById("moveReason").innerText =
-            "Why: Your move was compared against Stockfish's best move.";
+     "Why: " + getMoveExplanation(savedReview.evalLoss);
 
         document.getElementById("bestMove").innerText =
             "Best Move: " + savedReview.bestMove;
@@ -376,4 +376,20 @@ function getMoveGrade(evalLoss) {
     if (evalLoss < 3.00) return "Move Grade: ❌ Mistake";
 
     return "Move Grade: 🚨 Blunder";
+}
+
+function getMoveExplanation(evalLoss) {
+    if (evalLoss === null || evalLoss === undefined)
+        return "Stockfish is still analyzing this move.";
+
+    if (evalLoss < 0.75)
+        return "This move is nearly as strong as Stockfish's recommendation.";
+
+    if (evalLoss < 1.50)
+        return "A stronger move was available, but this keeps the position reasonably balanced.";
+
+    if (evalLoss < 3.00)
+        return "This move gives your opponent a noticeable advantage. Look at Stockfish's recommendation to see a stronger continuation.";
+
+    return "This move misses the strongest continuation and gives your opponent a major advantage.";
 }
